@@ -1,0 +1,105 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2025-11-03T06:17:58.982620Z",
+  "__export_source": "chatgpt",
+  "resources": [
+    {
+      "_id": "wrk_saude_digital",
+      "_type": "workspace",
+      "name": "Saude Digital API"
+    },
+    {
+      "_id": "fld_api",
+      "_type": "request_group",
+      "parentId": "wrk_saude_digital",
+      "name": "API"
+    },
+    {
+      "_id": "req_health",
+      "_type": "request",
+      "parentId": "fld_api",
+      "name": "GET /health",
+      "method": "GET",
+      "url": "http://localhost:8080/api/health"
+    },
+    {
+      "_id": "req_post",
+      "_type": "request",
+      "parentId": "fld_api",
+      "name": "POST /solicitacoes",
+      "method": "POST",
+      "url": "http://localhost:8080/api/solicitacoes",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"nomeContato\": \"Sueli Aparecida Nunes\", \"telefoneContato\": \"(11)91333-1010\", \"problemaRelato\": \"N\\u00e3o consigo ligar a c\\u00e2mera\"}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_list",
+      "_type": "request",
+      "parentId": "fld_api",
+      "name": "GET /solicitacoes",
+      "method": "GET",
+      "url": "http://localhost:8080/api/solicitacoes?status=ABERTO&limit=50"
+    },
+    {
+      "_id": "req_get_id",
+      "_type": "request",
+      "parentId": "fld_api",
+      "name": "GET /solicitacoes/:id",
+      "method": "GET",
+      "url": "http://localhost:8080/api/solicitacoes/1"
+    },
+    {
+      "_id": "req_patch_status",
+      "_type": "request",
+      "parentId": "fld_api",
+      "name": "PATCH /solicitacoes/:id/status",
+      "method": "PATCH",
+      "url": "http://localhost:8080/api/solicitacoes/1/status",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"status\": \"EM ANDAMENTO\"}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_put",
+      "_type": "request",
+      "parentId": "fld_api",
+      "name": "PUT /solicitacoes/:id",
+      "method": "PUT",
+      "url": "http://localhost:8080/api/solicitacoes/1",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"nomeContato\": \"Sueli A. Nunes\", \"telefoneContato\": \"(11)91333-1010\", \"problemaRelato\": \"Atualizando teste\", \"statusAtendimento\": \"EM ANDAMENTO\"}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_delete",
+      "_type": "request",
+      "parentId": "fld_api",
+      "name": "DELETE /solicitacoes/:id",
+      "method": "DELETE",
+      "url": "http://localhost:8080/api/solicitacoes/1"
+    }
+  ]
+}

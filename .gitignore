@@ -1,0 +1,17 @@
+
+# IntelliJ
+.idea/
+*.iml
+out/
+target/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Local libs
+lib/*.jar
+
+# Run configs are okay to commit
