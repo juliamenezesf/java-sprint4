@@ -2,7 +2,7 @@
   <configuration default="false" name="SaudeDigitalApi" type="Application" factoryName="Application">
     <envs>
       <env name="DB_USER" value="RM559932" />
-      <env name="DB_PASS" value="310795" />
+      <env name="DB_PASS" value="fiap25" />
     </envs>
     <option name="MAIN_CLASS_NAME" value="br.com.fiap.saude.Main" />
     <module name="saude-digital-api" />
