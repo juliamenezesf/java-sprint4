@@ -1,8 +1,6 @@
 package br.com.fiap.saude.http;
 
 import br.com.fiap.saude.service.SuporteSolicitacaoService;
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
@@ -11,78 +9,79 @@ import java.util.Map;
 
 public class Router {
 
-    // Ajuste aqui se quiser liberar outro origin (ex.: deploy futuro)
-    private static final String FRONTEND_ORIGIN = "http://localhost:5173";
-
     public static void startServer() throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
         var controller = new SuporteSolicitacaoController(new SuporteSolicitacaoService());
 
-        // /api/solicitacoes  -> GET / POST / OPTIONS (preflight)
-        server.createContext("/api/solicitacoes", exchange -> {
+        String basePath = "/api/solicitacoes";
+
+        // /api/solicitacoes  e  /api/solicitacoes/{id}
+        server.createContext(basePath, exchange -> {
             try {
-                addCorsHeaders(exchange);
-
                 String method = exchange.getRequestMethod().toUpperCase();
+                String path = exchange.getRequestURI().getPath(); // ex: /api/solicitacoes/10
 
-                // pré-flight do browser
-                if ("OPTIONS".equals(method)) {
-                    handlePreflight(exchange);
-                    return;
+                if (path.equals(basePath)) {
+                    // coleção
+                    if ("GET".equals(method)) {
+                        controller.listar(exchange);
+                    } else if ("POST".equals(method)) {
+                        controller.criar(exchange);
+                    } else {
+                        JsonUtil.send(exchange, 405, Map.of("error", "Método não permitido"));
+                    }
+                } else if (path.startsWith(basePath + "/")) {
+                    // detalhe: /api/solicitacoes/{id}
+                    String idStr = path.substring((basePath + "/").length());
+                    try {
+                        long id = Long.parseLong(idStr);
+
+                        if ("GET".equals(method)) {
+                            controller.buscarPorId(exchange, id);
+                        } else if ("PUT".equals(method)) {
+                            controller.atualizarStatus(exchange, id);
+                        } else if ("DELETE".equals(method)) {
+                            controller.deletar(exchange, id);
+                        } else {
+                            JsonUtil.send(exchange, 405, Map.of("error", "Método não permitido"));
+                        }
+
+                    } catch (NumberFormatException e) {
+                        JsonUtil.send(exchange, 400, Map.of(
+                                "error", "BAD_REQUEST",
+                                "details", "ID inválido na URL"
+                        ));
+                    }
+                } else {
+                    JsonUtil.send(exchange, 404, Map.of("error", "NOT_FOUND", "details", "Recurso não encontrado"));
                 }
 
-                switch (method) {
-                    case "GET" -> controller.listar(exchange);
-                    case "POST" -> controller.criar(exchange);
-                    default ->
-                            JsonUtil.send(exchange, 405,
-                                    Map.of("error", "Método não permitido"));
-                }
             } finally {
                 exchange.close();
             }
         });
 
-        // /api/solicitacoes/abertas -> GET / OPTIONS
+        // /api/solicitacoes/abertas
         server.createContext("/api/solicitacoes/abertas", exchange -> {
             try {
-                addCorsHeaders(exchange);
-
-                String method = exchange.getRequestMethod().toUpperCase();
-
-                if ("OPTIONS".equals(method)) {
-                    handlePreflight(exchange);
-                    return;
-                }
-
-                if ("GET".equals(method)) {
+                if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
                     controller.listarAbertas(exchange);
                 } else {
-                    JsonUtil.send(exchange, 405,
-                            Map.of("error", "Método não permitido"));
+                    JsonUtil.send(exchange, 405, Map.of("error", "Método não permitido"));
                 }
             } finally {
                 exchange.close();
             }
         });
+        // mensagem no navegador
+        server.createContext("/", exchange -> {
+            String response = "Saude Digital - API formulario - Backend ativo! Acesse /api/solicitacoes";
+            exchange.sendResponseHeaders(200, response.getBytes().length);
+            exchange.getResponseBody().write(response.getBytes());
+            exchange.close();
+        });
 
-        System.out.println("✅ HTTP server ON http://localhost:8080");
+        System.out.println("HTTP server ON http://localhost:8080");
         server.start();
     }
-
-    private static void addCorsHeaders(HttpExchange exchange) {
-        Headers headers = exchange.getResponseHeaders();
-        headers.set("Access-Control-Allow-Origin", FRONTEND_ORIGIN);
-        headers.set("Vary", "Origin");
-        headers.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-        headers.set("Access-Control-Allow-Headers", "Content-Type");
-        // se quiser permitir cookies no futuro:
-        // headers.set("Access-Control-Allow-Credentials", "true");
-    }
-
-    private static void handlePreflight(HttpExchange exchange) throws IOException {
-        // 204 No Content para o pré-flight
-        exchange.sendResponseHeaders(204, -1);
-    }
 }
-

@@ -20,27 +20,35 @@ public class SuporteSolicitacaoService {
         this.dao = dao;
     }
 
-    public long criar(SuporteSolicitacao s) throws SQLException {
-        // regra de negócio mínima
-        if (s == null) throw new SQLException("Objeto nulo");
-        if (s.getNomeContato() == null || s.getNomeContato().isBlank())
-            throw new SQLException("NOME_CONTATO obrigatório");
-        if (s.getProblemaRelato() == null || s.getProblemaRelato().isBlank())
-            throw new SQLException("PROBLEMA_RELATO obrigatório");
+    // GET /api/solicitacoes
+    public List<SuporteSolicitacao> listar() throws SQLException {
+        return dao.findAll();
+    }
 
-        return dao.insert(s);
+    // GET /api/solicitacoes/abertas
+    public List<SuporteSolicitacao> listarAbertas() throws SQLException {
+        return dao.findAbertasOuEmAndamento();
     }
 
     public Optional<SuporteSolicitacao> buscarPorId(long id) throws SQLException {
         return dao.findById(id);
     }
 
-    public List<SuporteSolicitacao> listar() throws SQLException {
-        return dao.findAll();
+    // POST /api/solicitacoes
+    public long criar(SuporteSolicitacao s) throws SQLException {
+        return dao.insert(s);
     }
 
-    public List<SuporteSolicitacao> listarAbertas() throws SQLException {
-        return dao.findAbertasOuEmAndamento();
+    // PUT /api/solicitacoes/{id}  (atualizar status)
+    public boolean atualizarStatus(long id, String novoStatus) throws SQLException {
+        int linhas = dao.updateStatus(id, novoStatus);
+        return linhas > 0;
+    }
+
+    // DELETE /api/solicitacoes/{id}
+    public boolean deletar(long id) throws SQLException {
+        int linhas = dao.delete(id);
+        return linhas > 0;
     }
 }
 
