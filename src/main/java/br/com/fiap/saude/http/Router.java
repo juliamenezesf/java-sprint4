@@ -11,7 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class Router {
-
     public static void startServer() throws IOException {
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
 
@@ -26,12 +25,20 @@ public class Router {
             try {
                 addCorsHeaders(exchange.getResponseHeaders());
 
-                if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String method = exchange.getRequestMethod().toUpperCase();
+                String p = exchange.getRequestURI().getPath();
+
+                // Render costuma fazer HEAD: responda 200 sem corpo
+                if ("HEAD".equals(method)) {
+                    exchange.sendResponseHeaders(200, -1);
+                    return;
+                }
+
+                if ("OPTIONS".equals(method)) {
                     exchange.sendResponseHeaders(204, -1);
                     return;
                 }
 
-                String p = exchange.getRequestURI().getPath();
                 if ("/".equals(p)) {
                     String response = "Saude Digital - API formulario - Backend ativo! Acesse /api/solicitacoes";
                     byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
@@ -43,6 +50,7 @@ public class Router {
                 }
 
                 if ("/healthz".equals(p)) {
+                    // aceita GET e HEAD (HEAD já tratado acima)
                     byte[] ok = "ok".getBytes(StandardCharsets.UTF_8);
                     exchange.getResponseHeaders().add("Content-Type", "text/plain; charset=utf-8");
                     exchange.sendResponseHeaders(200, ok.length);
@@ -63,12 +71,17 @@ public class Router {
             try {
                 addCorsHeaders(exchange.getResponseHeaders());
 
-                if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String method = exchange.getRequestMethod().toUpperCase();
+                if ("OPTIONS".equals(method)) {
                     exchange.sendResponseHeaders(204, -1);
                     return;
                 }
+                if ("HEAD".equals(method)) {
+                    // não servimos HEAD para coleções/detalhes → 405
+                    JsonUtil.send(exchange, 405, Map.of("error", "Método não permitido"));
+                    return;
+                }
 
-                String method = exchange.getRequestMethod().toUpperCase();
                 String path = normalizePath(exchange.getRequestURI().getPath()); // ex: /api/solicitacoes/10
 
                 if (path.equals(basePath)) {
@@ -115,12 +128,17 @@ public class Router {
             try {
                 addCorsHeaders(exchange.getResponseHeaders());
 
-                if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String method = exchange.getRequestMethod().toUpperCase();
+                if ("OPTIONS".equals(method)) {
                     exchange.sendResponseHeaders(204, -1);
                     return;
                 }
+                if ("HEAD".equals(method)) {
+                    JsonUtil.send(exchange, 405, Map.of("error", "Método não permitido"));
+                    return;
+                }
 
-                if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                if ("GET".equals(method)) {
                     controller.listarAbertas(exchange);
                 } else {
                     JsonUtil.send(exchange, 405, Map.of("error", "Método não permitido"));
@@ -130,14 +148,14 @@ public class Router {
             }
         });
 
-        System.out.println("HTTP server ON http://0.0.0.0:" + port);
+        System.out.println("HTTP server ON <http://0.0.0.0>:" + port);
         server.start();
     }
 
     // --------- helpers ---------
     private static void addCorsHeaders(Headers h) {
         h.add("Access-Control-Allow-Origin", "*");
-        h.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+        h.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS,HEAD");
         h.add("Access-Control-Allow-Headers", "Content-Type, Authorization");
         h.add("Content-Type", "application/json; charset=utf-8");
     }
@@ -149,4 +167,5 @@ public class Router {
         }
         return path;
     }
+
 }
